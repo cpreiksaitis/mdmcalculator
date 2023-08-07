@@ -135,7 +135,7 @@ input[type="radio"].toggle {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     grid-gap: 0;
-    font-size: 75%;
+    font-size: 75%; 
     margin: 0;
 
     .btn {
@@ -1149,7 +1149,7 @@ if (mdm==="3"){
     const loadingIndicator = document.getElementById("loadingIndicator");
     loadingIndicator.style.display = "block";
   
-    fetch('http://localhost:3000/pages/api/openai-request', { // Note the full URL here
+    fetch('/pages/api/openai-request', { // Note the full URL here
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
