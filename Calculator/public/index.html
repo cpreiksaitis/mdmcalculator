@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Medical Decision Making Calculator</title>
+  <style>
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #333;
+  padding: 10px;
+  padding-bottom: 400px;
+}
+
+form {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+input[type="text"],
+select {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  box-sizing: border-box;
+  border: 1px solid #bbb;
+  border-radius: 5px;
+}
+
+h1 {
+  text-align: center;
+  color: #5C5C5C;
+}
+
+.hidden {
+  display: none;
+}
+
+.loading-indicator {
+    width: 30px;
+    height: 30px;
+    border: 5px solid #000000;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+    }
+
+    @keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+    } 
+
+
+.btn{
+    border: 3px solid #1a1a1a;
+    display: inline-block;
+    padding: 8px;
+    position: relative;
+    text-align: center;
+    transition: background 600ms ease, color 600ms ease;
+    margin:0px 0px;
+}
+
+
+input[type="radio"].toggle {
+    display: none;
+    & + label{
+        cursor: pointer;
+        min-width: 60px;
+        &:hover{
+            background: none;
+            color: #1a1a1a;
+        }
+        &:after{
+            background: transparent; /* Make the background transparent when unchecked */
+            content: "";
+            height: 100%;
+            position: absolute;
+            top: 0;
+            transition: background 200ms cubic-bezier(0.77, 0, 0.175, 1); /* Change transition to the background color */
+            width: 100%;
+            z-index: -1;
+            left: 0;
+        }
+    }
+    &.toggle-left + label {
+        border-right: 0;
+    }
+    &.toggle-right + label{
+        margin-left: -5px;
+    }
+    &:checked + label.symptom-toggle-btn {
+        cursor: default;
+        color: #fff;
+        transition: color 200ms;
+        &:after{
+            background: #1a1a1a; /* Change the background to black when checked */
+        }
+    }
+}
+
+.form-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .form-section {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #000; /* Creates the horizontal line separating sections */
+    padding: 20px 0; /* Add some vertical spacing between sections */
+  }
+
+  .form-row {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    flex-wrap: wrap;
+    padding: 10px 0; /* Add some vertical spacing between rows */
+  }
+
+  .form-row .question {
+    flex-basis: 40%;
+    text-align:left;
+    align-items: left;
+  }
+
+  .btn-group {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 0;
+    font-size: 75%;
+    margin: 0;
+
+    .btn {
+        padding: 5px 1px;
+        width: 100%;
+        cursor: pointer;
+        display: block;
+        box-sizing: border-box; 
+        border: 2px solid #1a1a1a;
+
+        &:nth-child(4n) {
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+
+        &:nth-child(4n+2) {
+            border-bottom: 0px;
+        }
+
+        &:nth-last-child(-n+3) {
+            border-bottom: 2px solid #1a1a1a;
+        }
+    }
+}
+
+    /* Styles for the checkboxes within the .btn-group */
+.btn-group input[type="checkbox"].toggle {
+        display: none;
+        & + label {
+            cursor: pointer;
+            min-width: 60px;
+            &:hover {
+                background: none;
+                color: #1a1a1a;
+            }
+            &:after {
+                background: transparent;
+                content: "";
+                height: 100%;
+                position: absolute;
+                top: 0;
+                transition: background 200ms cubic-bezier(0.77, 0, 0.175, 1);
+                width: 100%;
+                z-index: -1;
+                left: 0;
+            }
+        }
+        &.toggle-left + label {
+            border-right: 0;
+        }
+        &.toggle-right + label {
+            margin-left: -5px;
+        }
+        &:checked + label.symptom-toggle-btn {
+            cursor: default;
+            color: #fff;
+            transition: color 200ms;
+            &:after {
+                background: #1a1a1a;
+            }
+        }
+    }
+
+  .form-row .controls {
+    flex-basis: 50%;
+    display: flex;
+    justify-content: left;
+    align-items: left;
+    padding: 0 5%;
+  }
+
+  .floatingResults {
+    opacity: 0; /* initially transparent */
+    visibility: hidden; /* ensures the element won't be clickable or hoverable when invisible */
+    transition: opacity 0.5s; /* gradual transition */
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 800px;
+    width: 100%;
+    background-color: #f9f9f9;
+    padding: 10px;
+    box-shadow: 0px -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+
+.result-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.button-container {
+  display: flex;
+  width: 100%;
+  justify-content: flex-start;
+  gap: 1%; /* aligns buttons on either end of the container */
+  margin-bottom: 10px; /* creates some space between the buttons and result box */
+}
+
+.result-box {
+  position: relative;
+  border: 1px solid #ccc;
+  width: 97%;
+  border-radius: 5px;
+  min-height: 100px;
+}
+
+#resultBox {
+  display: none;
+  padding: 10px;
+}
+
+#copyButton {
+  position: absolute;
+  top: -20px;
+  right: 5px;
+  background-color: #f9f9f9;
+  border: none;
+  cursor: pointer;
+  padding: 0px 0px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.3s ease-in-out;
+}
+
+#copyButton #copyLabel {
+  color: #5C5C5C;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+#copyButton:not(.inactive):hover svg,
+#copyButton:not(.inactive):hover #copyLabel {
+  stroke:  #C0C0BF;
+  color:  #C0C0BF;
+}
+
+.loading-indicator {
+  display: none;
+  /* Add your custom loading indicator styles here */
+}
+
+
+/* Additional styles for the button and span (you can customize as needed) */
+button {
+  padding: 10px;
+  background-color: black;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #585754;
+}
+
+span {
+  font-weight: bold;
+}
+
+
+</style>
+</head>
+<body>
+  <h1>Medical Decision Making Calculator</h1>
+  <form id="myForm">
+    <div class="form-section">
+      <div class="form-row">
+        <div class="question">
+    <label for="presenting_symptom">What was the patient's presenting symptom?</label></div>
+    <div class="controls">
+    <input type="text" id="presenting_symptom" name="presenting_symptom">
+    </div></div>
+    <div class="form-row">
+    <div class="question">
+    <label for="symptom_type">Was this a new symptom or exacerbation of a chronic symptom?</label></div>
+    <div class="controls">
+    <input id="symptom_type_none" class="toggle" name="symptom_type" value="none" type="radio" checked>
+    <input id="symptom_type_new" class="toggle toggle-left" name="symptom_type" value="new" type="radio">
+    <label for="symptom_type_new" class="btn symptom-toggle-btn">New</label>
+    <input id="symptom_type_chronic" class="toggle toggle-right" name="symptom_type" value="chronic" type="radio">
+    <label for="symptom_type_chronic" class="btn symptom-toggle-btn">Chronic</label>
+  </div></div>
+  <div id="acute_div" class="hidden">  
+  <div class="form-row">
+      <div class="question">
+      <label for="life_threatening">Are there diagnoses in your differential that could potentially pose a threat to the patient's life or bodily function?</label></div>
+      <div class="controls">
+      <input id="life_threatening_none" class="toggle" name="life_threatening" value="none" type="radio" checked>
+      <input id="life_threatening_yes" class="toggle toggle-left" name="life_threatening" value="yes" type="radio">
+      <label for="life_threatening_yes" class="btn symptom-toggle-btn">Yes</label>
+      <input id="life_threatening_no" class="toggle toggle-right" name="life_threatening" value="no" type="radio">
+      <label for="life_threatening_no" class="btn symptom-toggle-btn">No</label>
+      </div></div>
+      <div id="diagnoses" class="hidden">
+      <div class="form-row">
+        <div class="question">
+        <label for="diagnoses_input">Please list the diagnoses:</label></div>
+        <div class="controls">
+        <input type="text" id="diagnoses_input" name="diagnoses_input"></div>
+      </div>
+      </div>
+
+    <div id="systemic_symptoms_div" class="hidden">
+      <div class="form-row">
+        <div class="question">
+      <label for="systemic_symptoms_select">Did this patient have more than one system involved, i.e. 'systemic symptoms'? Explain:</label>
+      </div>
+      <div class="controls">
+      <input id="systemic_symtoms_select_none" class="toggle" name="systemic_symptoms_select" value="none" type="radio" checked>
+      <input id="systemic_symptoms_select_yes" class="toggle toggle-left" name="systemic_symptoms_select" value="yes" type="radio">
+      <label for="systemic_symptoms_select_yes" class="btn symptom-toggle-btn">Yes</label>
+      <input id="systemic_symptoms_select_no" class="toggle toggle-right" name="systemic_symptoms_select" value="no" type="radio">
+      <label for="systemic_symptoms_select_no" class="btn symptom-toggle-btn">No</label>
+      </select></div></div>
+
+      <div id="systemic_symptoms_input_div" class="hidden">
+        <div class="form-row">
+        <div class="question">
+        <label for="systemic_symptoms_input">Please list the symptoms:</label></div>
+        <div class="controls">
+        <input type="text" id="systemic_symptoms_input" name="systemic_symptoms_input"></div></div>
+      </div></div></div>
+
+    <div id="chronic_symptoms_div" class="hidden">
+      <div class="form-row">
+      <div class="question">
+      <label for="chronic_select">Would this be considered a severe exacerbation, progression, or side effect of treatment?</label><br>
+      </div>
+      <div class="controls">
+      <input id="chronic_select_none" class="toggle" name="chronic_select" value="none" type="radio" checked>
+      <input id="chronic_select_yes" class="toggle toggle-left" name="chronic_select" value="yes" type="radio">
+      <label for="chronic_select_yes" class="btn symptom-toggle-btn">Yes</label>
+      <input id="chronic_select_no" class="toggle toggle-right" name="chronic_select" value="no" type="radio">
+      <label for="chronic_select_no" class="btn symptom-toggle-btn">No</label>
+      </div></div>
+
+      <div id="justification" class="hidden">
+        <div class="form-row">
+        <div class="question">
+        <label for="justification_input">Justify the reasoning:</label></div>
+        <div class="controls">
+        <input type="text" id="justification_input" name="justification_input"></div></div>
+      </div>
+    </div></div>
+    <div class="form-section">
+    <div class="form-row">
+      <div class="question">
+    <label>Did you administer any of the following medications via IV, IM, or SQ?</label>
+    </div>
+    <div class="controls">
+    <div class="btn-group">
+    <input type="checkbox" class="toggle" id="medication1" name="medication_controlled" value="Hydromorphone (Dilaudid)">
+    <label for="medication1" class="btn symptom-toggle-btn">Hydromorphone (Dilaudid)</label>
+    <input type="checkbox" class="toggle" id="medication2" name="medication_controlled" value="Morphine">
+    <label for="medication2" class="btn symptom-toggle-btn">Morphine</label>
+    <input type="checkbox" class="toggle" id="medication3" name="medication_controlled" value="Fentanyl">
+    <label for="medication3" class="btn symptom-toggle-btn">Fentanyl</label>
+    <input type="checkbox" class="toggle" id="medication4" name="medication_controlled" value="Midazolam (Versed)">
+    <label for="medication4" class="btn symptom-toggle-btn">Midazolam (Versed)</label>
+    <input type="checkbox" class="toggle" id="medication5" name="medication_controlled" value="Lorazepam (Ativan)">
+    <label for="medication5" class="btn symptom-toggle-btn">Lorazepam (Ativan)</label>
+    <input type="checkbox" class="toggle" id="medication6" name="medication_controlled" value="Diazepam (Valium)">
+    <label for="medication6" class="btn symptom-toggle-btn">Diazepam (Valium)</label>
+    <input type="checkbox" class="toggle" id="medication7" name="medication_controlled" value="Ketamine">
+    <label for="medication7" class="btn symptom-toggle-btn">Ketamine</label>
+    <input type="checkbox" class="toggle" id="medication8" name="medication_controlled" value="Phenobarbital">
+    <label for="medication8" class="btn symptom-toggle-btn">Phenobarbital</label>
+    <input type="checkbox" class="toggle" id="medication9" name="medication_controlled" value="Naloxone (Narcan)">
+    <label for="medication9" class="btn symptom-toggle-btn">Naloxone (Narcan)</label>
+    <input type="checkbox" class="toggle" id="medication10" name="medication_controlled" value="Buprenorphine (Suboxone)">
+    <label for="medication10" class="btn symptom-toggle-btn">Buprenorphine (Suboxone)</label></div></div></div></div>
+    <div class="form-section">
+    <div class="form-row"><div class="question">
+    <label>Did you administer any of the following medications?</label></div>
+    <div class="controls">
+    <div class="btn-group">
+    <input type="checkbox" class="toggle" id="medication11" name="medication_monitored" value="Adenosine">
+    <label for="medication11" class="btn symptom-toggle-btn">Adenosine</label>
+    <input type="checkbox" class="toggle" id="medication12" name="medication_monitored" value="Atropine">
+    <label for="medication12" class="btn symptom-toggle-btn">Atropine</label>
+    <input type="checkbox" class="toggle" id="medication13" name="medication_monitored" value="Bicarbonate IV">
+    <label for="medication13" class="btn symptom-toggle-btn">Bicarbonate IV</label>
+    <input type="checkbox" class="toggle" id="medication14" name="medication_monitored" value="Blood Products">
+    <label for="medication14" class="btn symptom-toggle-btn">Blood Products</label>
+    <input type="checkbox" class="toggle" id="medication15" name="medication_monitored" value="D50/Glucagon">
+    <label for="medication15" class="btn symptom-toggle-btn">D50/Glucagon</label>
+    <input type="checkbox" class="toggle" id="medication16" name="medication_monitored" value="Dexmedetomidine (Precedex)">
+    <label for="medication16" class="btn symptom-toggle-btn">Dexmedetomidine (Precedex)</label>
+    <input type="checkbox" class="toggle" id="medication17" name="medication_monitored" value="Digoxin IV">
+    <label for="medication17" class="btn symptom-toggle-btn">Digoxin IV</label>
+    <input type="checkbox" class="toggle" id="medication18" name="medication_monitored" value="Dilantin (phenytoin) IV">
+    <label for="medication18" class="btn symptom-toggle-btn">Dilantin (phenytoin) IV</label>
+    <input type="checkbox" class="toggle" id="medication19" name="medication_monitored" value="Diltiazem IV">
+    <label for="medication19" class="btn symptom-toggle-btn">Diltiazem IV</label>
+    <input type="checkbox" class="toggle" id="medication20" name="medication_monitored" value="Dobutamine">
+    <label for="medication20" class="btn symptom-toggle-btn">Dobutamine</label>
+    <input type="checkbox" class="toggle" id="medication21" name="medication_monitored" value="Dopamine">
+    <label for="medication21" class="btn symptom-toggle-btn">Dopamine</label>
+    <input type="checkbox" class="toggle" id="medication22" name="medication_monitored" value="Epinephrine IV, IM, SQ">
+    <label for="medication22" class="btn symptom-toggle-btn">Epinephrine IV, IM, SQ</label>
+    <input type="checkbox" class="toggle" id="medication23" name="medication_monitored" value="Esmolol">
+    <label for="medication23" class="btn symptom-toggle-btn">Esmolol</label>
+    <input type="checkbox" class="toggle" id="medication24" name="medication_monitored" value="Etomidate">
+    <label for="medication24" class="btn symptom-toggle-btn">Etomidate</label>
+    <input type="checkbox" class="toggle" id="medication25" name="medication_monitored" value="Haldol IV">
+    <label for="medication25" class="btn symptom-toggle-btn">Haldol IV</label>
+    <input type="checkbox" class="toggle" id="medication26" name="medication_monitored" value="Heparin">
+    <label for="medication26" class="btn symptom-toggle-btn">Heparin</label>
+    <input type="checkbox" class="toggle" id="medication27" name="medication_monitored" value="Hydralazine IV">
+    <label for="medication27" class="btn symptom-toggle-btn">Hydralazine IV</label>
+    <input type="checkbox" class="toggle" id="medication28" name="medication_monitored" value="Insulin IV drip">
+    <label for="medication28" class="btn symptom-toggle-btn">Insulin IV drip</label>
+    <input type="checkbox" class="toggle" id="medication29" name="medication_monitored" value="Ketamine">
+    <label for="medication29" class="btn symptom-toggle-btn">Ketamine</label>
+    <input type="checkbox" class="toggle" id="medication30" name="medication_monitored" value="Labetalol IV">
+    <label for="medication30" class="btn symptom-toggle-btn">Labetalol IV</label>
+    <input type="checkbox" class="toggle" id="medication31" name="medication_monitored" value="Lidocaine IV">
+    <label for="medication31" class="btn symptom-toggle-btn">Lidocaine IV</label>
+    <input type="checkbox" class="toggle" id="medication32" name="medication_monitored" value="Lorazepam IV">
+    <label for="medication32" class="btn symptom-toggle-btn">Lorazepam IV</label>
+    <input type="checkbox" class="toggle" id="medication33" name="medication_monitored" value="Magnesium IV">
+    <label for="medication33" class="btn symptom-toggle-btn">Magnesium IV</label>
+    <input type="checkbox" class="toggle" id="medication34" name="medication_monitored" value="Metoprolol IV">
+    <label for="medication34" class="btn symptom-toggle-btn">Metoprolol IV</label>
+    <input type="checkbox" class="toggle" id="medication35" name="medication_monitored" value="Nicardipine IV">
+    <label for="medication35" class="btn symptom-toggle-btn">Nicardipine IV</label>
+    <input type="checkbox" class="toggle" id="medication36" name="medication_monitored" value="Nitroglycerin IV">
+    <label for="medication36" class="btn symptom-toggle-btn">Nitroglycerin IV</label>
+    <input type="checkbox" class="toggle" id="medication37" name="medication_monitored" value="Norepinephrine">
+    <label for="medication37" class="btn symptom-toggle-btn">Norepinephrine</label>
+    <input type="checkbox" class="toggle" id="medication38" name="medication_monitored" value="Phenylephrine">
+    <label for="medication38" class="btn symptom-toggle-btn">Phenylephrine</label>
+    <input type="checkbox" class="toggle" id="medication39" name="medication_monitored" value="Potassium IV">
+    <label for="medication39" class="btn symptom-toggle-btn">Potassium IV</label>
+    <input type="checkbox" class="toggle" id="medication40" name="medication_monitored" value="Procainamide">
+    <label for="medication40" class="btn symptom-toggle-btn">Procainamide</label>
+    <input type="checkbox" class="toggle" id="medication41" name="medication_monitored" value="Rocuronium">
+    <label for="medication41" class="btn symptom-toggle-btn">Rocuronium</label>
+    <input type="checkbox" class="toggle" id="medication42" name="medication_monitored" value="Propofol">
+    <label for="medication42" class="btn symptom-toggle-btn">Propofol</label>
+    <input type="checkbox" class="toggle" id="medication43" name="medication_monitored" value="Succinylcholine">
+    <label for="medication43" class="btn symptom-toggle-btn">Succinylcholine</label>
+    <input type="checkbox" class="toggle" id="medication44" name="medication_monitored" value="Thrombolytics">
+    <label for="medication44" class="btn symptom-toggle-btn">Thrombolytics</label>
+    <input type="checkbox" class="toggle" id="medication45" name="medication_monitored" value="Vasopressin">
+    <label for="medication45" class="btn symptom-toggle-btn">Vasopressin</label>
+    <input type="checkbox" class="toggle" id="medication46" name="medication_monitored" value="Versed">
+    <label for="medication46" class="btn symptom-toggle-btn">Versed</label>
+    <input type="checkbox" class="toggle" id="medication47" name="medication_monitored" value="Verapamil IV">
+    <label for="medication47" class="btn symptom-toggle-btn">Verapamil IV</label>
+    <input type="checkbox" class="toggle" id="medication48" name="medication_monitored" value="3% Normal Saline">
+    <label for="medication48" class="btn symptom-toggle-btn">3% Normal Saline</label></div></div></div></div>
+
+  <div class="form-section">
+    <div class="form-row"><div class="question">
+    <label>Did you administer or prescribe any other prescription drugs? Which ones? </label></div>
+    <div class="controls">
+    <textarea id="otherDrugs" name="otherDrugs" rows="4" cols="40"></textarea></div></div>
+
+    <div class="form-row"><div class="question">
+     <label> Were IV fluids administered?</label></div>
+    <div class="controls">
+    <input id="ivFluids_yes" class="toggle toggle-left" name="ivFluids" value="yes" type="radio">
+    <label for="ivFluids_yes" class="btn symptom-toggle-btn">Yes</label>
+    <input id="ivFluids_no" class="toggle toggle-right" name="ivFluids" value="no" type="radio" checked>
+    <label for="ivFluids_no" class="btn symptom-toggle-btn">No</label></div></div>
+
+    <div class="form-row"><div class="question">
+    <label>Were any potentially sedating medications administered?</label></div>
+    <div class="controls">
+    <input id="sedatingMeds_yes" class="toggle toggle-left" name="sedatingMeds" value="yes" type="radio">
+    <label for="sedatingMeds_yes" class="btn symptom-toggle-btn">Yes</label>
+    <input id="sedatingMeds_no" class="toggle toggle-right" name="sedatingMeds" value="no" type="radio" checked>
+    <label for="sedatingMeds_no" class="btn symptom-toggle-btn">No</label></div></div>
+    
+    <div class="form-row"><div class="question">
+    <label>Was anticoagulation initiated?</label></div>
+    <div class="controls">
+    <input id="anticoagulation_yes" class="toggle toggle-left" name="anticoagulation" value="yes" type="radio">
+    <label for="anticoagulation_yes" class="btn symptom-toggle-btn">Yes</label>
+    <input id="anticoagulation_no" class="toggle toggle-right" name="anticoagulation" value="no" type="radio" checked>
+    <label for="anticoagulation_no" class="btn symptom-toggle-btn">No</label></div></div>
+    <div class="form-row"><div class="question">
+    <label>Did this patient require a sitter or physical restraints?</label></div>
+    <div class="controls">
+    <input id="sitter_yes" class="toggle toggle-left" name="sitter" value="yes" type="radio">
+    <label for="sitter_yes" class="btn symptom-toggle-btn">Yes</label>
+    <input id="sitter_no" class="toggle toggle-right" name="sitter" value="no" type="radio" checked>
+    <label for="sitter_no" class="btn symptom-toggle-btn">No</label></div></div>
+    <div class="form-row"><div class="question">
+    <label>Did the patient have an IV placed?</label></div>
+    <div class="controls">
+    <input id="ivPlaced_yes" class="toggle toggle-left" name="ivPlaced" value="yes" type="radio">
+    <label for="ivPlaced_yes" class="btn symptom-toggle-btn">Yes</label>
+    <input id="ivPlaced_no" class="toggle toggle-right" name="ivPlaced" value="no" type="radio" checked>
+    <label for="ivPlaced_no" class="btn symptom-toggle-btn">No</label></div></div></div>
+
+    <div class="form-section">
+    <div class="form-row"><div class="question">
+    <label>Did you perform any major procedures?</label></div>
+    <div class="controls">
+    <div class="btn-group">
+    <input type="checkbox" class="toggle" id="major_procedure1" name="major_procedure" value="Management of a Displaced Fracture">
+    <label for="major_procedure1" class="btn symptom-toggle-btn">Management of a Displaced Fracture</label>
+    <input type="checkbox" class="toggle" id="major_procedure2" name="major_procedure" value="Reduction of a shoulder, TMJ, wrist, elbow, or ankle">
+    <label for="major_procedure2" class="btn symptom-toggle-btn">Reduction of a shoulder, TMJ, wrist, elbow, or ankle</label>
+    <input type="checkbox" class="toggle" id="major_procedure3" name="major_procedure" value="Insertion of a chest tube">
+    <label for="major_procedure3" class="btn symptom-toggle-btn">Insertion of a chest tube</label>
+    <input type="checkbox" class="toggle" id="major_procedure4" name="major_procedure" value="Cardioversion of the patient">
+    <label for="major_procedure4" class="btn symptom-toggle-btn">Cardioversion of the patient</label>
+    <input type="checkbox" class="toggle" id="major_procedure5" name="major_procedure" value="Endotracheal Intubation">
+    <label for="major_procedure5" class="btn symptom-toggle-btn">Endotracheal Intubation</label>
+    <input type="checkbox" class="toggle" id="major_procedure6" name="major_procedure" value="Lumbar Puncture">
+    <label for="major_procedure6" class="btn symptom-toggle-btn">Lumbar Puncture</label>
+    <input type="checkbox" class="toggle" id="major_procedure7" name="major_procedure" value="Thoracentesis">
+    <label for="major_procedure7" class="btn symptom-toggle-btn">Thoracentesis</label>
+    <input type="checkbox" class="toggle" id="major_procedure8" name="major_procedure" value="Paracentesis">
+    <label for="major_procedure8" class="btn symptom-toggle-btn">Paracentesis</label>
+    <input type="checkbox" class="toggle" id="major_procedure9" name="major_procedure" value="Placement of an IO">
+    <label for="major_procedure9" class="btn symptom-toggle-btn">Placement of an IO</label>
+    <input type="checkbox" class="toggle" id="major_procedure10" name="major_procedure" value="Placement of a central line">
+    <label for="major_procedure10" class="btn symptom-toggle-btn">Placement of a central line</label>
+    <input type="checkbox" class="toggle" id="major_procedure11" name="major_procedure" value="Placement of an arterial line">
+    <label for="major_procedure11" class="btn symptom-toggle-btn">Placement of an arterial line</label>
+    <input type="checkbox" class="toggle" id="major_procedure12" name="major_procedure" value="Procedural sedation">
+    <label for="major_procedure12" class="btn symptom-toggle-btn">Procedural sedation</label></div></div></div></div>
+      
+    <div class="form-section">
+    <div class="form-row"><div class="question">
+    <label>Was this patient admitted for surgery?</label></div>
+    <div class="controls">
+    <input id="surgery_yes" class="toggle toggle-left" name="surgery" value="yes" type="radio">
+    <label for="surgery_yes" class="btn symptom-toggle-btn">Yes</label>
+    <input id="surgery_no" class="toggle toggle-right" name="surgery" value="no" type="radio" checked>
+    <label for="surgery_no" class="btn symptom-toggle-btn">No</label></div></div>
+    <div class="form-row"><div class="question">
+    <label>Did you perform any minor procedures?</label></div>
+    <div class="controls">
+    <div class="btn-group">
+    <input type="checkbox" class="toggle" id="minor_procedure1" name="minor_procedure" value="Laceration repair">
+    <label for="minor_procedure1" class="btn symptom-toggle-btn">Laceration repair</label>
+    <input type="checkbox" class="toggle" id="minor_procedure2" name="minor_procedure" value="Incision and drainage">
+    <label for="minor_procedure2" class="btn symptom-toggle-btn">Incision and drainage</label>
+    <input type="checkbox" class="toggle" id="minor_procedure3" name="minor_procedure" value="Foreign body removal">
+    <label for="minor_procedure3" class="btn symptom-toggle-btn">Foreign body removal</label>
+    <input type="checkbox" class="toggle" id="minor_procedure4" name="minor_procedure" value="Nerve block">
+    <label for="minor_procedure4" class="btn symptom-toggle-btn">Nerve block</label></div></div></div>
+    <div class="form-row"><div class="question">
+    <label>Is there a reason this minor procedure is higher risk? Explain why:</label></div>
+    <div class="controls">
+    <textarea id="minorProcedureRisk" name="minorProcedureRisk" rows="4" cols="40"></textarea></div></div></div>
+    
+    <div class="form-section">
+    <div class="form-row"><div class="question">
+    <label>List what external records, if any you reviewed and what they provided:</label></div>
+    <div class="controls">
+    <textarea id="externalRecords" name="externalRecords" rows="4" cols="40"></textarea></div></div>
+    <div class="form-row"><div class="question">
+    <label>List anyone you talked to who provided history the patient couldn't provide. What did they provide?</label></div>
+    <div class="controls">
+    <textarea id="independent_historian" name="independent_historian" rows="4" cols="40"></textarea></div></div></div>
+
+<div class="form-section">
+    <div class="form-row"><div class="question">
+    <label>What tests did you order?</label></div>
+    <div class="controls"><div class="btn-group">
+    <input type="checkbox" class="toggle" id="test1" name="test" value="ECG">
+    <label for="test1" class="btn symptom-toggle-btn">ECG</label>
+    <input type="checkbox" class="toggle" id="test2" name="test" value="CBC">
+    <label for="test2" class="btn symptom-toggle-btn">CBC</label>
+    <input type="checkbox" class="toggle" id="test3" name="test" value="CMP">
+    <label for="test3" class="btn symptom-toggle-btn">CMP</label>
+    <input type="checkbox" class="toggle" id="test4" name="test" value="Lipase">
+    <label for="test4" class="btn symptom-toggle-btn">Lipase</label>
+    <input type="checkbox" class="toggle" id="test5" name="test" value="Troponin">
+    <label for="test5" class="btn symptom-toggle-btn">Troponin</label>
+    <input type="checkbox" class="toggle" id="test6" name="test" value="Urinalysis">
+    <label for="test6" class="btn symptom-toggle-btn">Urinalysis</label>
+    <input type="checkbox" class="toggle" id="test7" name="test" value="Pregnancy Test">
+    <label for="test7" class="btn symptom-toggle-btn">Pregnancy Test</label>
+    <input type="checkbox" class="toggle" id="test8" name="test" value="Type and screen">
+    <label for="test8" class="btn symptom-toggle-btn">Type and screen</label>
+    <input type="checkbox" class="toggle" id="test9" name="test" value="PT/PTT">
+    <label for="test9" class="btn symptom-toggle-btn">PT/PTT</label>
+    <input type="checkbox" class="toggle" id="test10" name="test" value="BNP">
+    <label for="test10" class="btn symptom-toggle-btn">BNP</label>
+    <input type="checkbox" class="toggle" id="test11" name="test" value="CT scan with IV contrast">
+    <label for="test11" class="btn symptom-toggle-btn">CT scan with IV contrast</label>
+    <input type="checkbox" class="toggle" id="test12" name="test" value="CT scan without IV contrast">
+    <label for="test12" class="btn symptom-toggle-btn">CT scan without IV contrast</label>
+    <input type="checkbox" class="toggle" id="test13" name="test" value="Chest X ray">
+    <label for="test13" class="btn symptom-toggle-btn">Chest X ray</label>
+    <input type="checkbox" class="toggle" id="test14" name="test" value="Abdominal X ray">
+    <label for="test14" class="btn symptom-toggle-btn">Abdominal X ray</label>
+    <input type="checkbox" class="toggle" id="test15" name="test" value="Exremity X ray">
+    <label for="test15" class="btn symptom-toggle-btn">Exremity X ray</label>
+    <input type="checkbox" class="toggle" id="test16" name="test" value="Formal ultrasound">
+    <label for="test16" class="btn symptom-toggle-btn">Formal ultrasound</label></div></div></div>
+    <div class="form-row"><div class="question">
+    <label for="test17">Other tests not listed:</label></div>
+    <div class="controls">
+   <textarea id="test17" name="test" rows="2" cols="30"></textarea></div></div></div>
+    
+      <div class="form-section">
+    <div class="form-row"><div class="question">
+    <label>List independant interpretation of a test (X-ray, EKG, Ultrasound, Rhythm Strip) NOT Labs</label></div>
+    <div class="controls">
+    <textarea id="independent_interpretation" name="independent_interpretation" rows="4" cols="40"></textarea></div></div>
+      <div class="form-row"><div class="question">
+    <label>List any external physicians (consultants or radiology) or other appropriate source talked to (CM, SW, facility)</label></div>
+    <div class="controls">
+    <textarea id="consultants" name="consultants" rows="4" cols="40"></textarea></div></div>
+      <div class="form-row"><div class="question">
+  <label>Was diagnosis or treatment significantly impacted by social determinants of health?</label></div>
+  <div class="controls">
+    <textarea id="social_determinants" name="social_determinants" rows="4" cols="40"></textarea></div></div>
+      <div class="form-row"><div class="question">
+   <label>Did you *consider* hospitalization or escalation of care for this patient? Why?</label></div>
+    <div class="controls">
+    <textarea id="hospitalization" name="hospitalization" rows="4" cols="40"></textarea></div></div>
+      <div class="form-row"><div class="question">
+<label>Did you decide not to recusitate or escalate care because of poor prognosis? Why?</label></div>
+    <div class="controls">
+    <textarea id="poor_prognosis" name="poor_prognosis" rows="4" cols="40"></textarea></div></div></div>
+  </form>
+  <div class="floatingResults">
+    <h2>Results</h2>
+  
+    <label>Problem Complexity:</label>
+    <span id="problem_complexity"></span><br>
+  
+    <label>Risk:</label>
+    <span id="risk"></span><br>
+    <label>Data:</label>
+    <span id="data"></span><br><br>
+  
+    <label>Medical Decision Making:</label>
+    <span id="mdm"></span><br><br>
+    <div class="result-container">
+
+      <div class="button-container">
+        <button onclick="fetchData(output, formData)" class="generate-button">Generate ChatGPT Output</button>
+        <button onclick="clearResultBox()" class="clear-button">Clear Results</button>
+        <div id="loadingIndicator" class="loading-indicator"></div>
+      </div>
+
+      <div class="result-box" id="resultBox">
+      <div id="result"></div>
+      <button id="copyButton" onclick="copyToClipboard()" style="display:none;">
+      <span id="copyLabel">Copy Text</span>
+      <svg id="copyIcon" stroke="#5C5C5C" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+      </svg>
+      <svg id="checkIcon" stroke="black" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+  </button>     
+    </div>
+  </div> 
+</div>
+
+
+  <script>
+
+var output = {};
+var formData = {};
+
+document.addEventListener('DOMContentLoaded', (event) => {
+  const switches = document.querySelectorAll('.switch');
+
+  switches.forEach((sw) => {
+    sw.addEventListener('click', (event) => {
+      const checkbox = sw.querySelector('input[type="checkbox"]');
+      if (event.target !== checkbox) {
+        event.preventDefault(); // stop the default action
+        checkbox.click(); // trigger a click event on the checkbox
+      }
+    });
+  });
+});
+
+document.addEventListener('scroll', function() {
+    // Check if the user is within 500px of the bottom of the page
+    var scrollHeight = document.documentElement.scrollHeight;
+    var scrollTop = document.documentElement.scrollTop;
+    var clientHeight = document.documentElement.clientHeight;
+    var distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+    var floatingResultsDiv = document.querySelector('.floatingResults');
+
+    if (distanceFromBottom <= 300 && floatingResultsDiv.style.opacity !== "1") {
+        floatingResultsDiv.style.visibility = 'visible';
+        floatingResultsDiv.style.opacity = '1'; // This will trigger the fade in due to the CSS transition
+    }
+});
+
+
+
+    document.getElementById("symptom_type_new").addEventListener("change", toggleSymptomType);
+    document.getElementById("symptom_type_chronic").addEventListener("change", toggleSymptomType);
+    document.getElementById("life_threatening_yes").addEventListener("change", toggleDiagnosisInput);
+    document.getElementById("life_threatening_no").addEventListener("change", toggleDiagnosisInput);
+    document.getElementById("life_threatening_no").addEventListener("change", toggleSystemicSymptomsInput);
+    document.getElementById("life_threatening_yes").addEventListener("change", toggleSystemicSymptomsInput);
+    document.getElementById("systemic_symptoms_select_yes").addEventListener("change", toggleSystemicSymptomsDataInput);
+    document.getElementById("systemic_symptoms_select_no").addEventListener("change", toggleSystemicSymptomsDataInput);
+    document.getElementById("chronic_select_yes").addEventListener("change", toggleJustificationInput);
+    document.getElementById("chronic_select_no").addEventListener("change", toggleJustificationInput);
+
+    function toggleSymptomType() {
+        var symptomType = this.value;
+        var acuteDiv = document.getElementById("acute_div");
+        var chronicSymptomsDiv = document.getElementById("chronic_symptoms_div");
+        var systemicSymptomsDiv = document.getElementById("systemic_symptoms_div");
+
+        acuteDiv.classList.toggle("hidden", symptomType !== "new");
+        chronicSymptomsDiv.classList.toggle("hidden", symptomType !== "chronic");
+        systemicSymptomsDiv.classList.add("hidden");
+    }
+
+    function toggleDiagnosisInput() {
+    var lifeThreateningYes = document.getElementById("life_threatening_yes");
+    var diagnosesDiv = document.getElementById("diagnoses");
+    diagnosesDiv.classList.toggle("hidden", !lifeThreateningYes.checked);
+}
+
+
+    function toggleSystemicSymptomsInput() {
+        var lifeThreateningYes = document.getElementById("life_threatening_yes");
+        var systemicSymptomsDiv = document.getElementById("systemic_symptoms_div");
+
+        systemicSymptomsDiv.classList.toggle("hidden", lifeThreateningYes.checked);
+
+
+    }
+
+    function toggleSystemicSymptomsDataInput() {
+        var systemicSymptomsSelect = document.getElementById("systemic_symptoms_select_yes");
+        var systemicSymptomsInputDiv = document.getElementById("systemic_symptoms_input_div");
+
+        systemicSymptomsInputDiv.classList.toggle("hidden", !systemicSymptomsSelect.checked);
+      
+    }
+
+
+    function toggleJustificationInput() {
+        var chronicSelect = document.getElementById("chronic_select_yes");
+        var justificationDiv = document.getElementById("justification");
+
+        justificationDiv.classList.toggle("hidden", !chronicSelect.checked);
+    }
+
+    
+    window.onload = function() {
+    var form = document.getElementById("myForm");
+
+    form.addEventListener("input", function (event) {
+        event.preventDefault();
+        
+        formData = new FormData(form);
+        output = generateOutput(formData);
+        displayOutput(output, formData);
+    });
+};
+
+    
+
+    function generateOutput(formData) {
+        var problemComplexity = "";
+        var risk = "";
+        var data = "";
+
+        var symptomType = formData.get("symptom_type");
+        var lifeThreatening = formData.get("life_threatening");
+        var chronicSelect = formData.get("chronic_select");
+        
+
+        if ((symptomType === "new" && lifeThreatening === "yes") || (symptomType === "chronic" && chronicSelect === "yes")) {
+            problemComplexity = "5";
+        } else {
+            problemComplexity = "4";
+        }
+
+        var majorProcedureValues = Array.from(document.querySelectorAll('input[name="major_procedure"]:checked')).map(checkbox => checkbox.value);
+var medicationMonitoredValues = Array.from(document.querySelectorAll('input[name="medication_monitored"]:checked')).map(checkbox => checkbox.value);
+var medicationControlledValues = Array.from(document.querySelectorAll('input[name="medication_controlled"]:checked')).map(checkbox => checkbox.value);
+var test11Checkbox = document.querySelector("#test11");
+var test11Value = test11Checkbox.checked ? test11Checkbox.value : null;
+
+var HighRiskFactors = [
+    test11Value,
+    formData.get("hospitalization"),
+    formData.get("surgery"),
+    formData.get("poor_prognosis"),
+    ...majorProcedureValues,
+    formData.get("sitter"),
+    formData.get("anticoagulation"),
+    formData.get("sedatingMeds"),
+    ...medicationMonitoredValues,
+    ...medicationControlledValues,
+].filter(value => value !== null && value !== "" && value.toLowerCase() !== "no");
+
+var test12Checkbox = document.querySelector("#test12");
+var test12Value = test12Checkbox.checked ? test12Checkbox.value : null;
+var test13Checkbox = document.querySelector("#test13");
+var test13Value = test13Checkbox.checked ? test13Checkbox.value : null;
+var test14Checkbox = document.querySelector("#test14");
+var test14Value = test14Checkbox.checked ? test14Checkbox.value : null;      
+
+var ModRiskFactors = [
+    test12Value,
+    test13Value,
+    test14Value,
+    formData.get("ivPlaced"),
+    formData.get("ivFluids"),
+    formData.get("social_determinants"),
+    formData.get("otherDrugs"),
+].filter(value => value !== null && value !== "" && value.toLowerCase() !== "no");
+
+console.log("HighRiskFactors:", HighRiskFactors);
+console.log("ModRiskFactors:", ModRiskFactors);
+console.log("HighRiskFactors.length:", HighRiskFactors.length);
+console.log("ModRiskFactors.length:", ModRiskFactors.length);
+
+if (HighRiskFactors.length > 0) {
+    risk = "5";
+} else if (ModRiskFactors.length > 0) {
+    risk = "4";
+} else {
+    risk = "3";
+}
+
+
+  
+
+var externalRecords = formData.get("externalRecords");
+var independent_historian = formData.get("independent_historian");
+var testValues = formData.getAll("test");
+var independent_interpretation = formData.get("independent_interpretation");
+var consultants = formData.get("consultants");
+
+// Filter out null values
+var checkedTestValues = testValues.filter(test => test !== null && test !== "");
+
+var test17 = formData.get("test17");
+
+// Calculate the counts
+var HighComplexityCount = checkedTestValues.length
+    + (externalRecords && externalRecords.trim().length > 0 ? 1 : 0)
+    + (independent_historian && independent_historian.trim().length > 0 ? 1 : 0)
+    + (test17 && test17.trim().length > 0 ? 1 : 0);
+
+var LowComplexityCount = checkedTestValues.length
+    + (externalRecords && externalRecords.trim().length > 0 ? 1 : 0)
+    + (test17 && test17.trim().length > 0 ? 1 : 0);
+
+
+console.log("HighComplexityCount:", HighComplexityCount);
+console.log("LowComplexityCount:", LowComplexityCount);
+console.log("independent_interpretation:", independent_interpretation && independent_interpretation.trim().length > 0);
+console.log("consultants:", consultants && consultants.trim().length > 0);
+console.log("independent_historian:", independent_historian && independent_historian.trim().length > 0);
+
+
+if ((HighComplexityCount > 2) && ((independent_interpretation && independent_interpretation.trim().length > 0) || (consultants && consultants.trim().length > 0))) {
+    data = "5";
+} else if ((HighComplexityCount > 2) || ((independent_interpretation && independent_interpretation.trim().length > 0) || (consultants && consultants.trim().length > 0))) {
+    data = "4";
+} else if ((LowComplexityCount > 1) || (independent_historian && independent_historian.trim().length > 0)) {
+    data = "3";
+} else {
+    data = "2";
+}
+
+
+        var output = {
+            problemComplexity: problemComplexity,
+            risk: risk,
+            data: data,
+        };
+
+        var mdm = calculateMedian([problemComplexity, risk, data]);
+output.mdm = mdm;
+
+// Update the MDM value in the HTML
+
+
+return output;
+    }
+function calculateMedian(values) {
+    // Sort the values in ascending order
+    var sortedValues = values.sort(function (a, b) {
+        return a - b;
+    });
+
+    var length = sortedValues.length;
+    var mid = Math.floor(length / 2);
+
+    // Check if the number of values is even or odd
+    if (length % 2 === 0) {
+        // For even number of values, calculate the average of the middle two values
+        return (sortedValues[mid - 1] + sortedValues[mid]) / 2;
+    } else {
+        // For odd number of values, return the middle value
+        return sortedValues[mid];
+    }
+}
+
+function generateTextOutput(formData, risk, data, mdm) {
+    var symptomType = formData.get("symptom_type");
+    var lifeThreatening = formData.get("life_threatening");
+    var chronicSelect = formData.get("chronic_select");
+    var presenting_symptom = formData.get("presenting_symptom");
+    var diagnoses_input = formData.get("diagnoses_input");
+    var systemic_symptoms_select = formData.get("systemic_symptoms_select");
+    var systemic_symptoms_input = formData.get("systemic_symptoms_input");
+    var justification_input = formData.get("justification_input");
+    var medications_controlled = formData.getAll("medication_controlled");
+    var medications_montiored = formData.getAll("medication_monitored");
+    var otherDrugs = formData.get("otherDrugs");
+    var ivFluids = formData.get("ivFluids");
+    var sedatingMeds = formData.get("sedatingMeds");
+    var anticoagulation = formData.get("anticoagulation");
+    var sitter = formData.get("sitter");
+    var ivPlaced = formData.get("ivPlaced");
+    var major_procedures = formData.getAll("major_procedure");
+    var surgery = formData.get("surgery");
+    var minor_procedures = formData.getAll("minor_procedure");
+    var minorProcedureRisk = formData.get("minorProcedureRisk");
+    var externalRecords = formData.get("externalRecords");
+    var independent_historian = formData.get("independent_historian");
+    var tests = formData.getAll("test");
+    var independent_interpretation = formData.get("independent_interpretation");
+    var consultants = formData.get("consultants");
+    var social_determinants = formData.get("social_determinants");
+    var hospitalization = formData.get("hospitalization");
+    var poor_prognosis = formData.get("poor_prognosis");
+    var problem_complexity = formData.get("problem_complexity");
+    var ctContrast = document.querySelector("#test11");
+    var ctNonCon = document.querySelector("#test12");
+    var chestXR = document.querySelector("#test13");
+    var abdXR = document.querySelector("#test14");
+
+
+var textOutput = "";
+textOutput += `This patient presented with ${presenting_symptom}, `;
+
+    if (symptomType === "new") {
+        if (lifeThreatening === "yes") {
+            textOutput += `which represented a potential threat to the patient's life or major bodily function due to consideration of the following diagnoses: ${diagnoses_input}. `;
+        } else if (systemic_symptoms_select === "yes") {
+            textOutput += `which represented an acute illness with systemic symptoms due to the presence of the following: ${systemic_symptoms_input}. `;
+        } else {
+            textOutput += `which represented an undiagnosed new problem with an uncertain outcome due to the broad potential differential that had to be considered. `;
+        }
+    } 
+    else if (symptomType === "chronic") {
+        if (chronicSelect === "yes") {
+            textOutput += `which represented a severe exacerbation of a chronic illness due to the following factors: ${justification_input}. `;
+        } else {
+            textOutput += `which represented exacerbation of a chronic illness. `;
+        }
+    }
+textOutput += `Caring for this patient required a number of care decisions that place the patient at `;   
+    if (risk === "3") {
+        textOutput += ` low risk `;
+    } else if (risk === "4") {
+        textOutput += ` moderate risk `;
+    } else if (risk === "5") {
+        textOutput += ` high risk `;
+    }
+
+
+textOutput += `of morbidity, mortality, or complications. These decisions included: `;
+    if (medications_controlled.length > 0) {
+        textOutput += `The administration of the following parenteral controlled substances: ${medications_controlled.join(", ")}. `;
+    }
+    if (medications_montiored.length > 0) {
+        textOutput += `Administration of the following drug therapies requiring intensive monitoring for toxicity: ${medications_montiored.join(", ")}. `;
+    }
+    if (otherDrugs.length > 0) {
+        textOutput += `Administration or prescription of the following prescription drugs: ${otherDrugs}. `;
+    }
+    if (ivFluids === "yes") {
+        textOutput += `Ordering intravenous fluids for this patient, which carry the risk of causing life-threatening complications such as pulmonary edema from volume overload, rapid and dangerous changes in electrolytes, or medication errors. `;
+    }
+    if (sedatingMeds === "yes") {
+        textOutput += `Administration of a sedating medication which may impact the patient's ability to breathe properly, may lead to a drop in blood pressure, anaphylactic reactions, paradoxical reactions and other complications, any of which could be life-threatening. `;
+    }
+    if (anticoagulation === "yes") {
+        textOutput += `Initiation of an anticoagulant medication, which increases the risk of bleeding and other life-threatening side effects, additionally these medications often must be adjusted based on the patient's renal function and potential for drug-drug interaction. `;
+    }
+    if (sitter === "yes") {
+        textOutput += `The use of physical restraints or monitoring by security personnel, which placed them at risk of physical or psychological trauma and increased the risk of further behavioral decompensation. `;
+    }
+    if (ivPlaced === "yes") {
+        textOutput += `Obtaining intravenous access for this patient, which has a number of moderate risks including damage to surrounding structures, introduction of infection, and pain or reaction at the insertion site. `;
+    }
+    if (major_procedures.length > 0) {
+        textOutput += `Performance of the following major emergent procedure(s): ${major_procedures.join(", ")}. `;
+    }
+    if (surgery === "yes") {
+        textOutput += `The need for major emergent surgery. `;
+    }
+    if (minor_procedures.length > 0) {
+        textOutput += `Performance of the following minor procedures: ${minor_procedures.join(", ")}`;
+    }
+    if (minorProcedureRisk.length > 0) {
+        textOutput += `, which was considered high risk due to: ${minorProcedureRisk}. `;
+    }
+    if (ctContrast.checked) {
+        textOutput += `To perform a CT scan with IV contrast, which carries the risk of exposure to ionizing ratiation and the potential for a severe and life threatening allergic reaction, anaphylaxisis. `;
+    }
+    if (ctNonCon.checked) {
+        textOutput += `To perform a CT scan, which exposes the patient to ionizing radiation and can increase the risk of development of malignancy with repeated exposure `;
+    }
+    if (chestXR.checked) {
+        textOutput += `To undergo a chest x ray, which exposes the patient to a nontrivial amount of radiation and carries a moderate risk of potential morbidity. `;
+    }
+    if (abdXR.checked) {
+        textOutput += `To undergo an abdominal x ray, which exposes the patient to a nontrivial amount of radiation and carries a moderate risk of potential morbidity. `;
+    }
+    if (hospitalization.length > 0) {
+        textOutput += `Considering hospitalization or escalation of care for this patient for the following reasons: ${hospitalization}. `;
+    }
+    if (social_determinants.length > 0) {
+        textOutput += `The patient's diagnosis and/or treatment was significantly impacted social determinants of heath in the following ways: ${social_determinants}. `;
+    }
+    if (poor_prognosis.length > 0) {
+        textOutput += `Deciding not to resuscitate or to de-escalate care for this patient based on their poor prognosis for the following reasons: ${poor_prognosis}. `;
+    }
+
+textOutput += `Additionally, caring for this patient required a`;
+if (data === "3") {
+        textOutput += ` low complexity of data to be reviewed and analyzed including: `;
+    } else if (data === "4") {
+        textOutput += ` moderate complexity of data to be reviewed and analyzed including: `;
+    } else if (risk === "5") {
+        textOutput += ` high complexity of data to be reviewed and analyzed including: `;
+    } else if (data === "2"){
+        textOutput += ` straightforward complexity of data to be reviewed and analyzed including: `;
+    }
+if (externalRecords.length > 0) {
+        textOutput += `Review of the following external records: ${externalRecords}. `;
+    }
+if (independent_historian.length > 0) {
+        textOutput += `Completing a part of this patient's assessment with data from an independent historian: ${independent_historian}. `;
+    }
+if (tests.length > 0) {
+        textOutput += `Ordering the following unique tests: ${tests.join(", ")}. `;
+    }
+if (independent_interpretation.length > 0) {
+        textOutput += `Performing an independent interpretation of the following test, which aided in the patient's care: ${independent_interpretation}. `;
+    }
+if (consultants.length > 0) {
+        textOutput += `Engaging in a direct, interactive discussion regarding the management of this patient or test interpretation with the following: ${consultants}. `;
+    }
+if (mdm==="3"){
+        textOutput += `Therefore caring for this patient required a low complexity of medical decision making. `;
+    } else if (mdm==="4"){
+        textOutput += `Therefore caring for this patient required a moderate complexity of medical decision making. `;
+    } else if (mdm==="5"){
+        textOutput += `Therefore caring for this patient required a high complexity of medical decision making. `;
+    }
+    return textOutput
+}
+
+
+
+    function displayOutput(output, formData) {
+        var problemComplexityElement = document.getElementById("problem_complexity");
+        var riskElement = document.getElementById("risk");
+        var dataElement = document.getElementById("data");
+        var mdmElement = document.getElementById("mdm");
+        var textOutput = generateTextOutput(formData, output.risk, output.data, output.mdm);
+        problemComplexityElement.textContent = output.problemComplexity;
+        riskElement.textContent = output.risk;
+        dataElement.textContent = output.data;
+        mdmElement.textContent = output.mdm;
+        
+        console.log(textOutput);
+    }
+    function showResultBox() {
+  var resultBox = document.getElementById('resultBox');
+  resultBox.style.display = 'block';
+}
+    function fetchData(output, formData) {
+      console.log('fetchData function called');
+      if (!formData || !(formData instanceof FormData)) {
+    var resultElement = document.getElementById('result');
+    resultElement.textContent = "Please enter data into the form before generating ChatGPT output.";
+    showResultBox();
+    document.getElementById('copyButton').style.display = 'inline-block';
+    return;
+  }
+
+    const additionalParagraph = "Rewrite the following into a cohesive paragraph for a medical chart, however don't truncate the information and include a listing of all lab tests and key phrases such as direct interactive discussion:";
+    var textOutput = generateTextOutput(formData, output.risk, output.data, output.mdm);
+    console.log(textOutput);
+
+    const loadingIndicator = document.getElementById("loadingIndicator");
+    loadingIndicator.style.display = "block";
+  
+    fetch('http://localhost:3000/pages/api/openai-request', { // Note the full URL here
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prompt: `${additionalParagraph}\n${textOutput}` }),
+  })
+  .then(response => response.json())
+  .then(prompt => {
+    loadingIndicator.style.display = "none";
+    console.log(prompt);
+    // Update the HTML element with the response data
+    const resultElement = document.getElementById('result');
+    resultElement.textContent = prompt.result;
+  })
+  .catch(error => {
+    loadingIndicator.style.display = "none";
+    console.error(error);
+  });
+  showResultBox();
+  document.getElementById('copyButton').style.display = 'inline-block';
+}
+
+function clearResultBox() {
+  var resultBox = document.getElementById('resultBox');
+  var resultElement = document.getElementById('result');
+  resultElement.textContent = ""; // Clear the result text
+  resultBox.style.display = 'none'; // Hide the result box
+ // Clear all form elements within the form with the ID "myForm" (replace "myForm" with your actual form ID)
+ var form = document.getElementById('myForm');
+  var elements = form.elements;
+  for (var i = 0; i < elements.length; i++) {
+    var element = elements[i];
+    if (element.tagName === "INPUT" || element.tagName === "TEXTAREA") {
+      element.value = "";
+      if (element.type === "radio" || element.type === "checkbox") {
+        element.checked = false;
+      }
+    } else if (element.tagName === "SELECT") {
+      element.selectedIndex = 0;
+    }
+  }
+  document.getElementById('problem_complexity').textContent = "";
+  document.getElementById('risk').textContent = "";
+  document.getElementById('data').textContent = "";
+  document.getElementById('mdm').textContent = "";
+  document.getElementById('copyButton').style.display = 'none';
+}
+
+function copyToClipboard() {
+  var resultElement = document.getElementById('result');
+  var copyButton = document.getElementById('copyButton');
+
+  navigator.clipboard.writeText(resultElement.textContent)
+    .then(() => {
+      copyButton.classList.add('inactive'); // Disable hover effects
+
+      document.getElementById('copyLabel').textContent = 'Copied';
+      document.getElementById('copyIcon').style.display = 'none';
+      document.getElementById('checkIcon').style.display = 'inline';
+
+      setTimeout(() => {
+        document.getElementById('copyLabel').textContent = 'Copy Text';
+        document.getElementById('copyIcon').style.display = 'inline';
+        document.getElementById('checkIcon').style.display = 'none';
+        copyButton.classList.remove('inactive'); // Enable hover effects
+      }, 3000);
+    })
+    .catch(err => {
+      console.error("Unable to copy!", err);
+    });
+}
+
+
+
+</script>
+</body>
+</html>
