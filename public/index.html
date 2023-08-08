@@ -1202,25 +1202,43 @@ function copyToClipboard() {
   var resultElement = document.getElementById('result');
   var copyButton = document.getElementById('copyButton');
 
-  navigator.clipboard.writeText(resultElement.textContent)
-    .then(() => {
-      copyButton.classList.add('inactive'); // Disable hover effects
+  // Check if navigator.clipboard.writeText is supported
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(resultElement.textContent)
+      .then(() => {
+        copyButton.classList.add('inactive'); // Disable hover effects
 
-      document.getElementById('copyLabel').textContent = 'Copied';
-      document.getElementById('copyIcon').style.display = 'none';
-      document.getElementById('checkIcon').style.display = 'inline';
+        document.getElementById('copyLabel').textContent = 'Copied';
+        document.getElementById('copyIcon').style.display = 'none';
+        document.getElementById('checkIcon').style.display = 'inline';
 
-      setTimeout(() => {
-        document.getElementById('copyLabel').textContent = 'Copy Text';
-        document.getElementById('copyIcon').style.display = 'inline';
-        document.getElementById('checkIcon').style.display = 'none';
-        copyButton.classList.remove('inactive'); // Enable hover effects
-      }, 3000);
-    })
-    .catch(err => {
+        setTimeout(() => {
+          document.getElementById('copyLabel').textContent = 'Copy Text';
+          document.getElementById('copyIcon').style.display = 'inline';
+          document.getElementById('checkIcon').style.display = 'none';
+          copyButton.classList.remove('inactive'); // Enable hover effects
+        }, 3000);
+      })
+      .catch(err => {
+        console.error("Unable to copy!", err);
+      });
+  } else {
+    // Fallback for browsers that don't support navigator.clipboard.writeText
+    var textArea = document.createElement('textarea');
+    textArea.value = resultElement.textContent;
+    document.body.appendChild(textArea);
+    textArea.select();
+
+    try {
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      console.log('Text copied to clipboard');
+    } catch (err) {
       console.error("Unable to copy!", err);
-    });
+    }
+  }
 }
+
 
 
 
