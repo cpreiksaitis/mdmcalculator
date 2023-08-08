@@ -11,6 +11,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));  // add this line
 
-app.post('/pages/api/openai-request', openAIRequest);
+app.post('/api/openai-request', openAIRequest);
 
 app.listen(3000, () => console.log('Server running on port 3000'));
