@@ -1,0 +1,28 @@
+{
+  "name": "mdmcalculator",
+  "version": "1.0.0",
+  "description": "a calculator for MDM billing in EM",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "body-parser": "^1.19.0",
+    "dotenv": "^10.0.0",
+    "cors": "^2.8.5",
+    "openai": "^0.1.0" 
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cpreiksaitis/mdmcalculator.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cpreiksaitis/mdmcalculator/issues"
+  },
+  "homepage": "https://github.com/cpreiksaitis/mdmcalculator#readme"
+}
+
+
