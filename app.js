@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 require('dotenv').config();
 const dotenv = require('dotenv');
 const cors = require('cors');
-const openAIRequest = require('./pages/api/openai-request');
+const openAIRequest = require('./api/openai-request');
 
 const app = express();
 
