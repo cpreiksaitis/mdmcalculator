@@ -736,11 +736,22 @@ document.addEventListener('scroll', function() {
 
     var floatingResultsDiv = document.querySelector('.floatingResults');
 
-    if (distanceFromBottom <= 300 && floatingResultsDiv.style.opacity !== "1") {
-        floatingResultsDiv.style.visibility = 'visible';
-        floatingResultsDiv.style.opacity = '1'; // This will trigger the fade in due to the CSS transition
+    if (distanceFromBottom <= 300 && scrollTop <= 300) {
+        if (floatingResultsDiv.style.opacity !== "1") {
+            floatingResultsDiv.style.visibility = 'visible';
+            floatingResultsDiv.style.opacity = '1'; // This will trigger the fade in due to the CSS transition
+        }
+    } else {
+        floatingResultsDiv.style.opacity = '0';
+        // After the transition, set visibility to hidden to prevent any accidental clicks or interaction
+        setTimeout(function() {
+            if (floatingResultsDiv.style.opacity === '0') {
+                floatingResultsDiv.style.visibility = 'hidden';
+            }
+        }, 300); // Assuming a transition time of 300ms in the CSS
     }
 });
+
 
 
 
