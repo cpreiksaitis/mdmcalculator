@@ -736,7 +736,7 @@ document.addEventListener('scroll', function() {
 
     var floatingResultsDiv = document.querySelector('.floatingResults');
 
-    if (distanceFromBottom <= 300 && scrollTop <= 300) {
+    if (distanceFromBottom <= 300) {
         if (floatingResultsDiv.style.opacity !== "1") {
             floatingResultsDiv.style.visibility = 'visible';
             floatingResultsDiv.style.opacity = '1'; // This will trigger the fade in due to the CSS transition
