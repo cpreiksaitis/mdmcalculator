@@ -754,9 +754,7 @@ document.addEventListener('scroll', function() {
     }
 });
 
-
-
-
+function attachListeners() {
     document.getElementById("symptom_type_new").addEventListener("change", toggleSymptomType);
     document.getElementById("symptom_type_chronic").addEventListener("change", toggleSymptomType);
     document.getElementById("life_threatening_yes").addEventListener("change", toggleDiagnosisInput);
@@ -767,6 +765,9 @@ document.addEventListener('scroll', function() {
     document.getElementById("systemic_symptoms_select_no").addEventListener("change", toggleSystemicSymptomsDataInput);
     document.getElementById("chronic_select_yes").addEventListener("change", toggleJustificationInput);
     document.getElementById("chronic_select_no").addEventListener("change", toggleJustificationInput);
+}
+
+attachListeners();
 
     function toggleSymptomType() {
         var symptomType = this.value;
@@ -1185,30 +1186,54 @@ if (mdm==="3"){
   document.getElementById('copyButton').style.display = 'inline-block';
 }
 
+let initialState = {};
+const form = document.getElementById('myForm');
+const elements = form.elements;
+for (let i = 0; i < elements.length; i++) {
+  const element = elements[i];
+  if (element.type === "checkbox" || element.type === "radio") {
+    initialState[element.id] = element.checked;
+  } else if (element.type !== "button" && element.type !== "submit" && element.type !== "reset") {
+    initialState[element.id] = element.value;
+  }
+}
+
+function restoreInitialState() {
+  for (const id in initialState) {
+    const element = document.getElementById(id);
+    if (element) {
+      if (element.type === "checkbox" || element.type === "radio") {
+        element.checked = initialState[id];
+      } else {
+        element.value = initialState[id];
+      }
+    }
+  }
+  formData = undefined;
+}
+
+    
 function clearResultBox() {
   var resultBox = document.getElementById('resultBox');
   var resultElement = document.getElementById('result');
   resultElement.textContent = ""; // Clear the result text
   resultBox.style.display = 'none'; // Hide the result box
- // Clear all form elements within the form with the ID "myForm" (replace "myForm" with your actual form ID)
- var form = document.getElementById('myForm');
-  var elements = form.elements;
-  for (var i = 0; i < elements.length; i++) {
-    var element = elements[i];
-    if (element.tagName === "INPUT" || element.tagName === "TEXTAREA") {
-      element.value = "";
-      if (element.type === "radio" || element.type === "checkbox") {
-        element.checked = false;
-      }
-    } else if (element.tagName === "SELECT") {
-      element.selectedIndex = 0;
-    }
-  }
+
+restoreInitialState()
+  
   document.getElementById('problem_complexity').textContent = "";
   document.getElementById('risk').textContent = "";
   document.getElementById('data').textContent = "";
   document.getElementById('mdm').textContent = "";
   document.getElementById('copyButton').style.display = 'none';
+
+   document.getElementById("acute_div").classList.add("hidden");
+    document.getElementById("chronic_symptoms_div").classList.add("hidden");
+    document.getElementById("systemic_symptoms_div").classList.add("hidden");
+    document.getElementById("diagnoses").classList.add("hidden");
+    document.getElementById("systemic_symptoms_input_div").classList.add("hidden");
+    document.getElementById("justification").classList.add("hidden");
+    attachListeners();
 }
 
 function copyToClipboard() {
